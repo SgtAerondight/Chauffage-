@@ -26,10 +26,6 @@ blueprint:
       selector:
         entity:
           domain: input_number
-    entity_puissance:
-      name: Puissance
-      description: Champ d'affichage de la puissance (input_number)
-      selector:
         entity:
           domain: input_number
     entity_chauffage:
@@ -43,54 +39,18 @@ blueprint:
 variables:
   coeff_c: !input coeff_c
   coeff_t: !input coeff_t
-  entity_temp_int: !input entity_temp_int
-  entity_temp_ext: !input entity_temp_ext
-  entity_fenetre: !input entity_fenetre
 
 trigger:
   - platform: time_pattern
     minutes: "/10"
   - platform: state
     entity_id: !input entity_consigne
-  - platform: state
-    entity_id: !input entity_fenetre
-
-
 action:
   - alias: récupération des données
     variables:
       entity_consigne: !input entity_consigne
       consigne: "{{states(entity_consigne)}}"
-      temp_ext: '{{ states(entity_temp_ext) }}'
-      temp_int: '{{ states(entity_temp_int) }}'
-      fenetre: '{{states(entity_fenetre)}}'     
-      puissance: >-
-        {%set val = coeff_c * (consigne - temp_int) + coeff_t * (consigne -
-        temp_ext) %}  {% if val > 1 and fenetre == 'off' %} {% set val = 100 %}  {% elif val < 0 or
-        fenetre == 'on' %} {% set val = 0 %}  {% else %} {% set val = ( (val *
-        100) | round(0)) %} {% endif %} {{val}}
-      temps_chauffe: '{{ puissance * 6 }}'
-  - alias: Met à jour l'indicateur de puissance
-    service: input_number.set_value
-    target:
-      entity_id: !input entity_puissance
-    data:
-      value: '{{puissance}}'  
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: '{{puissance == 0}}'
-        sequence:
-          - service: switch.turn_off
-            target:
-              entity_id: !input entity_chauffage
-      - conditions:
-          - condition: template
-            value_template: '{{ puissance > 99}}'
-        sequence:
-          - service: switch.turn_on
-            target:
-              entity_id: !input entity_chauffage
+  
     default:
       - service: switch.turn_on
         target:
